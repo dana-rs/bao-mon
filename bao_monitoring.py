@@ -6,7 +6,7 @@ from datetime import datetime
 import time  # Import time for delay
 
 # Configuration
-SERVICE_NAME = "solana"
+SERVICE_NAME = "sol"
 LAST_RESTART_FILE = "/home/bao-monitor/solana_last_restart.log"  # Adjusted for bao-monitor user
 CHECK_INTERVAL = 1  # Time in seconds between each check (e.g., 60 seconds)
 
@@ -31,6 +31,9 @@ def main():
     print(f"[{datetime.now().isoformat()}] Starting monitoring...")
 
     while True:
+
+        print(f"[{datetime.now().isoformat()}] checking if sol has restarted......")
+
         current_restart = get_service_restart_time()
         if not current_restart:
             time.sleep(CHECK_INTERVAL)
