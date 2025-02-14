@@ -6,42 +6,32 @@ import time
 
 # Configuration
 SERVICE_NAME = "sol"
-CHECK_INTERVAL = 0.05  # Time in seconds (50ms) between each check
+CHECK_INTERVAL = 0.05  # 50ms between each check
 
-def get_service_restart_time():
-    """Get the last restart time of the service using systemctl."""
+def get_service_status():
+    """Get the current status of the service using systemctl."""
     try:
         result = subprocess.run(
-            ["systemctl", "show", SERVICE_NAME, "--property=ActiveEnterTimestamp"],
+            ["systemctl", "is-active", SERVICE_NAME],
             capture_output=True,
             text=True
         )
-        if result.returncode == 0:
-            return result.stdout.split("=")[-1].strip()
-        else:
-            print(f"Error fetching service status: {result.stderr}")
-            return None
+        return result.stdout.strip()  # Returns 'active', 'inactive', or 'failed'
     except Exception as e:
-        print(f"Exception while fetching service status: {e}")
-        return None
+        print(f"[{datetime.now().isoformat()}] Error fetching service status: {e}")
+        return "unknown"
 
 def main():
     print(f"[{datetime.now().isoformat()}] Starting monitoring...")
-    last_restart = None  # Variable to store the last known restart time
+    last_status = None  # Variable to store the last known status
 
     while True:
-        current_restart = get_service_restart_time()
-        if not current_restart:
-            time.sleep(CHECK_INTERVAL)
-            continue
-
-        if current_restart != last_restart:
-            print(f"[{datetime.now().isoformat()}] Service has restarted.")
-            last_restart = current_restart
-        else:
-            print(f"[{datetime.now().isoformat()}] No restart detected.")
-
-        # Wait for the next check
+        current_status = get_service_status()
+        
+        if current_status != last_status:
+            print(f"[{datetime.now().isoformat()}] Service status changed: {current_status}")
+            last_status = current_status
+        
         time.sleep(CHECK_INTERVAL)
 
 if __name__ == "__main__":
