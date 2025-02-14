@@ -10,7 +10,8 @@ import sys
 SOLANA_CLI_PATH = "/home/sol/.local/share/solana/install/active_release/bin/solana"
 SERVICE_NAME = "sol"
 CHECK_INTERVAL = 0.05  # 50ms between each service status check
-CENTRAL_SERVER_URL = "http://your-central-server:3000"  # Replace with your actual Socket.IO server URL
+CENTRAL_SERVER_URL = "https://884a-113-130-126-115.ngrok-free.app"
+CENTRAL_SERVER_KEY="my-secret-key"
 RETRY_COUNT = 5  # Number of retry attempts for Socket.IO connection
 RETRY_INTERVAL = 0.5  # Time in seconds between retries (500ms)
 
@@ -66,7 +67,7 @@ def connect_with_retries():
     for attempt in range(1, RETRY_COUNT + 1):
         try:
             print(f"[{datetime.now().isoformat()}] Attempting to connect to the central server (Attempt {attempt}/{RETRY_COUNT})...")
-            sio.connect(CENTRAL_SERVER_URL)
+            sio.connect(CENTRAL_SERVER_URL, auth={"key": CENTRAL_SERVER_KEY})
             return True  # Successfully connected
         except Exception as e:
             print(f"[{datetime.now().isoformat()}] Connection attempt {attempt} failed: {e}")
