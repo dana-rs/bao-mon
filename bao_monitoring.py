@@ -7,7 +7,7 @@ import time
 
 # Configuration
 SERVICE_NAME = "sol"
-LAST_RESTART_FILE = "/home/bao/tmp/solana_last_restart.log"  # Updated path
+LAST_RESTART_FILE = "/home/sol/tmp/solana_last_restart.log"  # Updated path
 CHECK_INTERVAL = 60  # Time in seconds between each check
 
 # Ensure the directory exists
