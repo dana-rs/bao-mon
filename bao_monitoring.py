@@ -61,11 +61,11 @@ def main():
     last_status = None  # Variable to store the last known status
 
     # Connect to the central server
-    try:
-        sio.connect(CENTRAL_SERVER_URL)
-    except Exception as e:
-        print(f"[{datetime.now().isoformat()}] Failed to connect to the central server: {e}")
-        return
+    # try:
+    #     sio.connect(CENTRAL_SERVER_URL)
+    # except Exception as e:
+    #     print(f"[{datetime.now().isoformat()}] Failed to connect to the central server: {e}")
+    #     return
 
     identity_pubkey = get_identity_pubkey()
     if identity_pubkey:
