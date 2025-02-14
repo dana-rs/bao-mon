@@ -6,23 +6,26 @@ import time
 import socketio
 
 # Configuration
-
-SOLANA_CLI_PATH = "/home/sol/.local/share/solana/install/active_release/bin/solana"  # Replace with the actual Solana CLI path
-rpcURL = "http://127.0.0.1:8899"  # Example RPC URL
-
+SOLANA_CLI_PATH = "/home/sol/.local/share/solana/install/active_release/bin/solana"
 SERVICE_NAME = "sol"
 CHECK_INTERVAL = 0.05  # 50ms between each check
 CENTRAL_SERVER_URL = "http://your-central-server:3000"  # Replace with your actual Socket.IO server URL
 
 # Create a Socket.IO client
 sio = socketio.Client()
+connected = False  # Track Socket.IO connection
+was_active = False  # Track if the service was ever active
 
 @sio.event
 def connect():
+    global connected
+    connected = True
     print(f"[{datetime.now().isoformat()}] Connected to the central server.")
 
 @sio.event
 def disconnect():
+    global connected
+    connected = False
     print(f"[{datetime.now().isoformat()}] Disconnected from the central server.")
 
 def get_service_status():
@@ -55,17 +58,17 @@ def get_identity_pubkey():
         print(f"Exception while fetching identity pubkey: {e}")
         return None
 
-
 def main():
+    global was_active
     print(f"[{datetime.now().isoformat()}] Starting monitoring...")
     last_status = None  # Variable to store the last known status
 
     # Connect to the central server
-    # try:
-    #     sio.connect(CENTRAL_SERVER_URL)
-    # except Exception as e:
-    #     print(f"[{datetime.now().isoformat()}] Failed to connect to the central server: {e}")
-    #     return
+    try:
+        sio.connect(CENTRAL_SERVER_URL)
+    except Exception as e:
+        print(f"[{datetime.now().isoformat()}] Failed to connect to the central server: {e}")
+        return
 
     identity_pubkey = get_identity_pubkey()
     if identity_pubkey:
@@ -80,8 +83,11 @@ def main():
             print(f"[{datetime.now().isoformat()}] Service status changed: {current_status}")
             last_status = current_status
 
-            # Send a Socket.IO event if the service is deactivating or inactive
-            if current_status in ("deactivating", "inactive"):
+            if current_status == "active":
+                was_active = True  # Mark that the service has been active
+
+            # Send a Socket.IO event only if the service was active at least once and Socket.IO is connected
+            if was_active and connected and current_status in ("deactivating", "inactive"):
                 sio.emit("service_status", {
                     "service": SERVICE_NAME,
                     "status": current_status,
