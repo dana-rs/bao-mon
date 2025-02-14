@@ -79,11 +79,29 @@ def connect_with_retries():
                 print(f"[{datetime.now().isoformat()}] All connection attempts failed. Exiting.")
                 sys.exit(1)  # Exit the script with an error code
 
+def get_system_hostname():
+    """Get the system hostname using the hostname command."""
+    try:
+        result = subprocess.run(
+            ["hostname"],
+            capture_output=True,
+            text=True
+        )
+        if result.returncode == 0:
+            return result.stdout.strip()
+        else:
+            print(f"Error fetching hostname: {result.stderr}")
+            return "unknown"
+    except Exception as e:
+        print(f"Exception while fetching hostname: {e}")
+        return "unknown"
+
 def main():
     global was_active
     print(f"[{datetime.now().isoformat()}] Starting monitoring...")
     last_status = None  # Variable to store the last known status
-
+    hostname = get_system_hostname()  # Get the system hostname
+    
     # Attempt to connect to the central server with retries
     connect_with_retries()
 
@@ -106,6 +124,7 @@ def main():
             # Send a Socket.IO event only if the service was active at least once and Socket.IO is connected
             if was_active and connected and current_status in ("deactivating", "inactive"):
                 sio.emit("service_status", {
+                    "hostname": hostname,                    
                     "service": SERVICE_NAME,
                     "status": current_status,
                     "timestamp": datetime.now().isoformat()
