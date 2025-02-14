@@ -1,17 +1,12 @@
 #!/usr/bin/env python3
 
-import os
 import subprocess
 from datetime import datetime
 import time
 
 # Configuration
 SERVICE_NAME = "sol"
-LAST_RESTART_FILE = "/home/sol/tmp/solana_last_restart.log"  # Updated path
-CHECK_INTERVAL = 1  # Time in seconds between each check
-
-# Ensure the directory exists
-os.makedirs(os.path.dirname(LAST_RESTART_FILE), exist_ok=True)
+CHECK_INTERVAL = 0.05  # Time in seconds (50ms) between each check
 
 def get_service_restart_time():
     """Get the last restart time of the service using systemctl."""
@@ -32,6 +27,7 @@ def get_service_restart_time():
 
 def main():
     print(f"[{datetime.now().isoformat()}] Starting monitoring...")
+    last_restart = None  # Variable to store the last known restart time
 
     while True:
         current_restart = get_service_restart_time()
@@ -39,25 +35,13 @@ def main():
             time.sleep(CHECK_INTERVAL)
             continue
 
-        try:
-            if os.path.exists(LAST_RESTART_FILE):
-                with open(LAST_RESTART_FILE, "r") as file:
-                    last_restart = file.read().strip()
-                
-                if current_restart != last_restart:
-                    print(f"[{datetime.now().isoformat()}] Service has restarted.")
-                    with open(LAST_RESTART_FILE, "w") as file:
-                        file.write(current_restart)
-                else:
-                    print(f"[{datetime.now().isoformat()}] No restart detected.")
-            else:
-                print(f"[{datetime.now().isoformat()}] Initializing monitoring...")
-                with open(LAST_RESTART_FILE, "w") as file:
-                    file.write(current_restart)
-        except Exception as e:
-            print(f"[{datetime.now().isoformat()}] Error handling the file: {e}")
+        if current_restart != last_restart:
+            print(f"[{datetime.now().isoformat()}] Service has restarted.")
+            last_restart = current_restart
+        else:
+            print(f"[{datetime.now().isoformat()}] No restart detected.")
 
-        # Wait before checking again
+        # Wait for the next check
         time.sleep(CHECK_INTERVAL)
 
 if __name__ == "__main__":
