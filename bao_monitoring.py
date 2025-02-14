@@ -4,12 +4,15 @@ import subprocess
 from datetime import datetime
 import time
 import socketio
+import sys
 
 # Configuration
 SOLANA_CLI_PATH = "/home/sol/.local/share/solana/install/active_release/bin/solana"
 SERVICE_NAME = "sol"
-CHECK_INTERVAL = 0.05  # 50ms between each check
+CHECK_INTERVAL = 0.05  # 50ms between each service status check
 CENTRAL_SERVER_URL = "http://your-central-server:3000"  # Replace with your actual Socket.IO server URL
+RETRY_COUNT = 5  # Number of retry attempts for Socket.IO connection
+RETRY_INTERVAL = 0.5  # Time in seconds between retries (500ms)
 
 # Create a Socket.IO client
 sio = socketio.Client()
@@ -58,17 +61,30 @@ def get_identity_pubkey():
         print(f"Exception while fetching identity pubkey: {e}")
         return None
 
+def connect_with_retries():
+    """Attempt to connect to the Socket.IO server with retries."""
+    for attempt in range(1, RETRY_COUNT + 1):
+        try:
+            print(f"[{datetime.now().isoformat()}] Attempting to connect to the central server (Attempt {attempt}/{RETRY_COUNT})...")
+            sio.connect(CENTRAL_SERVER_URL)
+            return True  # Successfully connected
+        except Exception as e:
+            print(f"[{datetime.now().isoformat()}] Connection attempt {attempt} failed: {e}")
+            if attempt < RETRY_COUNT:
+                retry_delay = RETRY_INTERVAL + (attempt - 1) * 0.1  # Slightly increase delay with each retry
+                print(f"[{datetime.now().isoformat()}] Retrying in {retry_delay:.2f} seconds...")
+                time.sleep(retry_delay)
+            else:
+                print(f"[{datetime.now().isoformat()}] All connection attempts failed. Exiting.")
+                sys.exit(1)  # Exit the script with an error code
+
 def main():
     global was_active
     print(f"[{datetime.now().isoformat()}] Starting monitoring...")
     last_status = None  # Variable to store the last known status
 
-    # Connect to the central server
-    try:
-        sio.connect(CENTRAL_SERVER_URL)
-    except Exception as e:
-        print(f"[{datetime.now().isoformat()}] Failed to connect to the central server: {e}")
-        return
+    # Attempt to connect to the central server with retries
+    connect_with_retries()
 
     identity_pubkey = get_identity_pubkey()
     if identity_pubkey:
